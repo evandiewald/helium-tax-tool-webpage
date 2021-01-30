@@ -7,7 +7,7 @@
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
-    <link href="../custom.css" rel="stylesheet">
+    <link href="custom.css" rel="stylesheet">
 
     <!-- Lightweight client-side loader that feature-detects and load polyfills only when necessary -->
     <script src="https://cdn.jsdelivr.net/npm/@webcomponents/webcomponentsjs@2/webcomponents-loader.min.js"></script>
@@ -17,14 +17,14 @@
 
     <!-- Simply set the `src` attribute to your MD file and win -->
 
-    <title>Hello, world!</title>
+    <title>HNT Taxable Earnings</title>
 
 
 
   </head>
   <body>
+
     <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
-    {% import "bootstrap/wtf.html" as wtf %}
 
     <!-- Optional JavaScript; choose one of the two! -->
 
@@ -54,8 +54,8 @@
         <div style="margin-left: 10%; margin-right: 10%">
         <zero-md>
           <script type="text/markdown">
-            # HNT Taxable Earnings Exporter
-            A brutally simple tool for exporting a CSV of taxable earnings for a given account based on the USD/HNT price on Coingecko. [View on Github](https://github.com/evandiewald/helium-taxable-mining-earnings).
+            # HNT Taxable Earnings Exporter 2020 [![status](https://img.shields.io/pypi/status/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
+            I hacked together a brutally simple tool for exporting a CSV of taxable earnings for a given account based on the USD/HNT price on Coingecko. [View on Github](https://github.com/evandiewald/helium-tax-tool-webpage).
             ## ***Disclaimer**: This is not official tax advice - I have zero qualifications and take no responsibility for how you use this code. Use at your own risk and make sure to consult a tax professional.*
 
             I suspect that Helium is many folks' first experience with crypto mining (it is for me) and thus, maneuvering crypto taxes. My understanding is that the IRS considers mined crypto as income, based on the USD value of the token on that day.
@@ -66,63 +66,53 @@
             Some more details here: https://cryptotrader.tax/blog/how-to-handle-cryptocurrency-mining-on-your-taxes
 
             Most exchanges and tax preparation software can help you handle the capital gains aspect, but I haven't seen a straightforward way to calculate your eligible income for mined HNT. This extremely simple script is meant for my own purposes, but I figured I'd share in case it helps others. Simply plug in your account address and it will generate a CSV file with four columns:
-            - DATE: the script starts from 12-31-2020 and works backward for N_DAYS (I have it set at 365, but it depends when you got your first hotspot)
+            - DATE: the script starts from 12-31-2020 and works backward until the day you got your first hotspot
             - HNT_MINED: total HNT mined on that day for all hotspots associated with your address (gathered by calling the [Helium API](https://developer.helium.com/blockchain/api/api-hotspots)
             - HNT_PRICE_USD: the Coingecko price for HNT (in USD) on that date
             - VALUE_MINED_USD: calculated as HNT_MINED * HNT_PRICE_USD (total eligible mined income for that date)
 
+            **Be aware that exporting will take some time** - I'm skimping a bit on computing resources but you are always welcome to clone the code and run locally (or submit a PR with efficiency improvements). Alternatively, feel free to contribute so I can afford more robust infrastructure!
           </script>
         </zero-md>
         </div>
       </div>
 
-      <div class="tab-pane fade" id="pills-account" role="tabpanel" aria-labelledby="pills-account-tab" style="width: 80%">
-        <div id="content">
-          <form class="form form-horizontal" method="post" role="form" action="/">
-            {{ addressForm.csrf_token() }}
-            {{ wtf.form_field(addressForm.address) }}
-<!--            <div id="submit"><p><input type=submit class="btn btn-primary btn-lg" value="Export CSV" onclick="loading()"></div>-->
-            <div>
-<!--              <button type="submit" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#exampleModal">-->
-<!--                Export CSV-->
-<!--              </button>-->
-              {{ wtf.form_field(addressForm.submit_account, class="btn btn-primary btn-lg") }}
-            </div>
-            <div class="alert alert-warning" role="alert">
-              Exporting can take a few minutes, and depends on the number of hotspots you have and how long you've had them.
-            </div>
-
-          </form>
+      <div class="tab-pane fade" id="pills-account" role="tabpanel" aria-labelledby="pills-account-tab" style="width: 50%">
+        <div class="alert alert-warning" role="alert">
+          CSV Export may take a several minutes depending on the number of hotspots and how long you've had them! The process is complete when you see the download. <b>The spinner might not disappear as expected - UX is a work in progress :)</b>
         </div>
+        <form class="form form-horizontal needs-validation" method="get" role="form" action="http://52.91.54.77:5000/account" onsubmit="loading()">
+          <label for="address">HNT Wallet Address</label>
+          <input class="form-control" name="address" id="address" required>
+          <button type="submit" id="submit-account" class="btn btn-primary btn-lg">
+            <span id="spinner-account" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
+                Export CSV
+          </button>
+        </form>
+        <button class="btn btn-info btn-lg" onclick="reset()">
+              Reset
+        </button>
       </div>
 
 
-      <div class="tab-pane fade" id="pills-hotspot" role="tabpanel" aria-labelledby="pills-hotspot-tab" style="width: 80%">
-        <div id="content">
-          <form class="form form-horizontal" method="post" role="form">
-            {{ hotspotForm.csrf_token() }}
-            {{ wtf.form_field(hotspotForm.address) }}
-<!--            <div id="submit"><p><input type=submit class="btn btn-primary btn-lg" value="Export CSV" onclick="loading()"></div>-->
-<!--            <div class="col text-left">-->
-<!--              <button type="submit" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#exampleModal">-->
-<!--                Export CSV-->
-<!--              </button>-->
-            <div>
-              {{ wtf.form_field(hotspotForm.submit_hotspot, class="btn btn-primary btn-lg") }}
-            </div>
-<!--            <p><input type="submit" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#exampleModal">-->
-
-            <div class="alert alert-warning" role="alert">
-              Exporting can take a few minutes.
-            </div>
-
-          </form>
+      <div class="tab-pane fade" id="pills-hotspot" role="tabpanel" aria-labelledby="pills-account-tab" style="width: 50%">
+        <div class="alert alert-warning" role="alert">
+          CSV Export may take a several minutes depending on the number of hotspots and how long you've had them! The process is complete when you see the download. <b>The spinner might not disappear as expected - UX is a work in progress :)</b>
         </div>
+        <form class="form form-horizontal needs-validation" method="get" role="form" action="http://52.91.54.77:5000/hotspot" onsubmit="loading()">
+          <label for="hotspot">Helium Hotspot Address</label>
+          <input class="form-control" name="hotspot" id="hotspot" required>
+          <button type="submit" id="submit-hotspot" class="btn btn-primary btn-lg">
+            <span id="spinner-hotspot" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
+                Export CSV
+          </button>
+
+        </form>
+        <button class="btn btn-info btn-lg" onclick="reset()">
+              Reset
+        </button>
       </div>
 
-<!--      <div id="loading-spinner" class="spinner-border" role="status" style="display: none;">-->
-<!--          <span class="sr-only"></span>-->
-<!--      </div>-->
 
       <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog">
@@ -147,23 +137,31 @@
   </div>
 
   <footer class="bg-info">
-    <div class="position-absolute bottom-0 start-50 translate-middle-x" style="margin-bottom: 10px; background-color: bisque;">
-        Like the project and want to support? HNT Address: 14b7gkGPca2zyRCbUr1uuykiJwdtYnDhdZ3XBKgXocKQANrSavd
+    <div class="position-relative bottom-0 start-50 translate-middle-x text-center" style="margin-bottom: 1%; background-color: bisque;">
+        Like the project and want to support? HNT Address: 12woN8FPVkDj2AYwuW3ibCiMC936VhxmmQDJD77k25YbtQSW5AT
     </div>
   </footer>
 
 
   <script type="text/javascript">// <![CDATA[
-        function loading() {
-          document.getElementById("loading-spinner").style.display = "block";
+        function reset() {
+          document.getElementById("submit-hotspot").disabled = false;
+          document.getElementById("submit-account").disabled = false;
+          document.getElementById("spinner-hotspot").hidden = true;
+          document.getElementById("spinner-account").hidden = true;
+
         }
   </script>
 
-  <script>
-      window.onload = function exampleFunction() {
-          document.getElementById("loading-spinner").style.display = "none";
-      }
+  <script type="text/javascript">// <![CDATA[
+        function loading() {
+          document.getElementById("spinner-hotspot").hidden = false;
+          document.getElementById("spinner-account").hidden = false;
+          document.getElementById("submit-hotspot").disabled = true;
+          document.getElementById("submit-account").disabled = true;
+        }
   </script>
+
 
   </body>
 </html>
